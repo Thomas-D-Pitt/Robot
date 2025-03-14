@@ -12,6 +12,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     x11-apps \
     libgraphicsmagick++-dev \
     libxsimd-dev \
+    iputils-ping \
     python3-pip \
     python3-zmq \
     # ros-${ROS_VERSION}-navigation2 \
@@ -31,9 +32,11 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     ros-${ROS_VERSION}-cv-bridge \
     ros-${ROS_VERSION}-joy \
     ros-${ROS_VERSION}-teleop-twist-joy \
+    ros-${ROS_VERSION}-demo-nodes-cpp \
     python3-colcon-common-extensions \
     python3-rosdep \ 
-    python3-pygame
+    python3-pygame \
+    python3-rpi-lgpio
     # rm -rf /var/lib/apt/lists/*  # Clean up to reduce image size
 
 
@@ -47,6 +50,9 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
 # delete the password for the ubuntu user
 RUN passwd -d ubuntu 
 # Switch to non-root user
+RUN groupadd gpio
+RUN usermod -aG gpio ubuntu
+RUN usermod -aG dialout ubuntu
 USER ubuntu
 
 RUN sudo rosdep init && rosdep update
