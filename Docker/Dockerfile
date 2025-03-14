@@ -29,8 +29,11 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     ros-${ROS_VERSION}-tf2-sensor-msgs \
     ros-${ROS_VERSION}-angles \
     ros-${ROS_VERSION}-cv-bridge \
+    ros-${ROS_VERSION}-joy \
+    ros-${ROS_VERSION}-teleop-twist-joy \
     python3-colcon-common-extensions \
-    python3-rosdep 
+    python3-rosdep \
+    python3-pygame
     # rm -rf /var/lib/apt/lists/*  # Clean up to reduce image size
 
 

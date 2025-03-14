@@ -7,17 +7,22 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ../:/ws/
-      - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      - /run/udev:/run/udev:ro
-      - /opt/vc:/opt/vc
-      - /etc/apt/trusted.gpg.d/:/etc/apt/trusted.gpg.d/
+      # - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      # - /run/udev:/run/udev:ro
+      # - /opt/vc:/opt/vc
+      # - /etc/apt/trusted.gpg.d/:/etc/apt/trusted.gpg.d/
       - /dev/shm:/dev/shm
+      - /dev/input:/dev/input
+      - /dev/bus/usb:/dev/bus/usb
     environment:
       # - DISPLAY=${DISPLAY}
-      - DISPLAY=192.168.128.1:0.0
+      # - DISPLAY=192.168.128.1:0.0
       - ROS_DOMAIN_ID=0
       # - ROS_DISCOVERY_SERVER=192.168.1.167:11811
     # runtime: nvidia
+    devices:
+      - /dev/input/event0
+      - /dev/input/js0
     stdin_open: true
     tty: true
     privileged: true
