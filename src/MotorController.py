@@ -78,14 +78,14 @@ class MotorController(Node):
             self.leftReverseMotorSignal.set_target_value(0)
         else:
             self.leftForwardMotorSignal.set_target_value(0)
-            self.leftReverseMotorSignal.set_target_value(0)
+            self.leftReverseMotorSignal.set_target_value(left_throttle)
 
         if right_throttle > 0:
             self.rightForwardMotorSignal.set_target_value(right_throttle)
             self.rightReverseMotorSignal.set_target_value(0)
         else:
             self.rightForwardMotorSignal.set_target_value(0)
-            self.rightReverseMotorSignal.set_target_value(0)
+            self.rightReverseMotorSignal.set_target_value(right_throttle)
 
 def main(args=None):
     rclpy.init(args=args)

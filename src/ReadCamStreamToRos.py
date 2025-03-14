@@ -28,63 +28,42 @@ class CameraStreamPublisher(Node):
         self.get_logger().info("Starting the camera stream subscriber...")
         self.timer = self.create_timer(0.033, self.timer_callback)  # ~30 FPS (33ms interval)
 
-    def save_frame_to_file(self, image_data, filename="frame.jpg"):
-        """Save the accumulated image data to a file."""
-        with open(filename, 'wb') as f:
-            f.write(image_data)
-        print(f"Frame saved to {filename}")
-
-    def get_full_frame(self):
-        # Send a request to get the MJPEG stream
-        response = requests.get(self.stream_url, stream=True)
-        
-        # Start accumulating data from the stream
-        image_data = b''
-        idx = 0
-        # Try reading enough data for one full frame (MJPEG usually sends frames in chunks)
-        for chunk in response.iter_content(chunk_size=4096):  # Increase chunk size for more data
-            idx += 1
-            # print(image_data)
-            image_data += chunk
-            # Check if the current data contains a full JPEG frame (ends with \xff\xd9)
-            if image_data.endswith(b'\xff\xd9\r\n'):
-                return image_data
-
-        return None  # In case of failure to retrieve a full frame
-
     def timer_callback(self):
-        image_data = self.get_full_frame()
-        self.save_frame_to_file(image_data, "frame1.jpg")
-        print(image_data)
-        import sys
-        sys.exit()
-        nparr = np.frombuffer(image_data, np.uint8)
-        frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        if frame is not None:
-            cv2.imwrite('frame.jpg', frame)
-            print("frame!")
-        else:
-            print("No frame!")
-        # timestamp = self.read_timestamp_from_exif(image_data)
-        timestamp = 0
-        if frame is not None:
-            # Create the ROS Image message
-            ros_image = self.bridge.cv2_to_imgmsg(frame, encoding='bgr8')
-            
-            # If timestamp is available, embed it in the ROS Image header
-            if timestamp:
-                # Set the timestamp into the ROS message header
-                # Convert timestamp string to ROS time
-                ros_timestamp = Time()
-                ros_timestamp.sec, ros_timestamp.nanosec = self.convert_timestamp_to_ros(timestamp)
+        try:
+            # Fetch frame data from Flask server (Image + Timestamp)
+            response = requests.get(self.stream_url, stream=True)
+            # Iterate over each frame in the response stream
+            for chunk in response.iter_content(chunk_size=1024):
+                if b'--frame' in chunk:  # Detect the start of a frame
+                    # Find where the image data starts (after boundary)
+                    start_index = chunk.find(b'\r\n\r\n') + 4  # Skip past the boundary headers
+                    image_data = chunk[start_index:]
 
-                ros_image.header.stamp = ros_timestamp  # Set timestamp in ROS message header
-                ros_image.header.frame_id = "/world"
-                print(ros_timestamp)
-            
-            # Publish the image message
-            self.image_publisher.publish(ros_image)
-            # return
+                    # Convert image data to OpenCV format (use cv2 for OpenCV-based processing)
+                    nparr = np.frombuffer(image_data, np.uint8)
+                    frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                    timestamp = self.read_timestamp_from_exif(image_data)
+                    if frame is not None:
+                        # Create the ROS Image message
+                        ros_image = self.bridge.cv2_to_imgmsg(frame, encoding='bgr8')
+                        
+                        # If timestamp is available, embed it in the ROS Image header
+                        if timestamp:
+                            # Set the timestamp into the ROS message header
+                            # Convert timestamp string to ROS time
+                            ros_timestamp = Time()
+                            ros_timestamp.sec, ros_timestamp.nanosec = self.convert_timestamp_to_ros(timestamp)
+
+                            ros_image.header.stamp = ros_timestamp  # Set timestamp in ROS message header
+                            ros_image.header.frame_id = "/world"
+
+                        # Publish the image message
+                        self.image_publisher.publish(ros_image)
+                        return
+                        
+                    
+        except requests.exceptions.RequestException as e:
+            self.get_logger().error(f"Error fetching stream: {e}")
 
     def convert_timestamp_to_ros(self, timestamp):
         # Ensure the timestamp is a string (if it's in bytes)
