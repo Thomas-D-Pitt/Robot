@@ -1,5 +1,5 @@
 import time
-import GPIO
+import RPi.GPIO as GPIO
 import threading
 
 class SoftwarePWM:

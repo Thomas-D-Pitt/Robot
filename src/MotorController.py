@@ -3,7 +3,7 @@ from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float32
 from SoftwarePWM import SoftwarePWM
-import GPIO
+import RPi.GPIO as GPIO
 
 # Constants for differential drive
 WHEEL_RADIUS = 0.08  # meters, adjust to your robot
@@ -43,7 +43,7 @@ class MotorController(Node):
 
         self.enable_motors(True)
 
-    def enable_motors(enabled: bool):
+    def enable_motors(self, enabled: bool):
         for pin in ENABLE_PINS:
             if enabled:
                 GPIO.output(pin, GPIO.HIGH)
